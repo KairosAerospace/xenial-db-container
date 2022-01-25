@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: 137296740171.dkr.ecr.us-west-2.amazonaws.com/kairos-docker-build:production
+        aws_auth:
+          aws_access_key_id: $AWS_ACCESS_KEY_ID
+          aws_secret_access_key: $AWS_SECRET_ACCESS_KEY
+    working_directory: /opt/kairos/build-home/repo
+    environment:
+      registry: 137296740171.dkr.ecr.us-west-2.amazonaws.com
+      image_name: postgis-unittest
+      candidate_image_name: candidate
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run: kairos_container_init
+      - run:
+          name: login into Kairos Docker repository
+          command: |
+            # login to ECR in the remote docker that was set up above
+            $(aws ecr get-login --no-include-email --region us-west-2)
+      - run:
+          name: build image
+          command: |
+            docker build -t ${candidate_image_name} .
+      - run:
+          name: push to docker registry
+          command: |
+            # apply appropriate tags and push
+            if [[ $CIRCLE_BRANCH == "main" ]]; then
+              TAGS="latest build-${CIRCLE_BUILD_NUM}"
+            else
+              TAGS="${CIRCLE_BRANCH} ${CIRCLE_BRANCH}-${CIRCLE_BUILD_NUM}"
+            fi
+
+            for tag in $TAGS; do
+              docker tag ${candidate_image_name} ${registry}/${image_name}:${tag}
+              echo "Pushing ${registry}/${image_name}:${tag}"
+              docker push ${registry}/${image_name}:${tag}
+            done
+notify:
+  webhooks:
+    - url: https://bdoa77w3h0.execute-api.us-west-2.amazonaws.com/webhook/
+workflows:
+  version: 2
+  kairos-workflow:
+    jobs:
+      - build:
+          context: org-global
