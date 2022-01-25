@@ -8,7 +8,15 @@ Portions copyright the PostGIS Docker project, and the PostgreSQL Docker project
 see Docker-PostgreSQL-LICENSE for MIT License
 see Docker-PostGIS-LICENSE for MIT License
 
-Portions include:
+Portions from [docker-library/postgres][1] include:
 
-- initdb-postgis.sh
-- 
+- `docker-entrypoint.sh`
+
+Portions from [PostGIS Docker project][2] include:
+
+- `initdb-postgis.sh`
+- `update-postgis.sh`
+
+
+[1]: https://github.com/docker-library/postgres
+[2]: https://github.com/postgis/docker-postgis
